@@ -1,0 +1,28 @@
+[package]
+name = "aha-misc"
+version = "0.0.1"
+edition = "2024"
+authors = ["qrzbing <qrzbingfoxmail.com>"]
+license = "MIT OR Apache-2.0"
+description = "Aha's Mischief Maker"
+repository = "https://github.com/qrzbing/aha-misc"
+
+[lib]
+name = "aha_misc"
+path = "src/lib.rs"
+
+[features]
+default = []
+openssl = ["dep:openssl"]
+
+[dependencies]
+clap = { version="4.5.48", features = ["derive"] }
+libafl = { version = "0.15.3" }
+libafl_bolts = { version = "0.15.3" }
+libc = "0.2.176"
+log = "0.4.28"
+openssl = { version = "0.10.73", optional = true }
+sysinfo = "0.36.1"
+
+[build-dependencies]
+cc = "1.2.38"
