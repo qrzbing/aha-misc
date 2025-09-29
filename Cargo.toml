@@ -17,6 +17,7 @@ openssl = ["dep:openssl"]
 
 [dependencies]
 clap = { version="4.5.48", features = ["derive"] }
+env_logger = "0.11.8"
 libafl = { version = "0.15.3" }
 libafl_bolts = { version = "0.15.3" }
 libc = "0.2.176"

@@ -68,8 +68,8 @@ impl NetworkClient {
     /// which causes the socket to close immediately on shutdown.
     fn set_linger(&self, fd: i32) -> io::Result<()> {
         let linger = libc::linger {
-            l_onoff: 1,  // 启用 SO_LINGER
-            l_linger: 0, // 设置超时时间为 0 秒
+            l_onoff: 1,  // enable SO_LINGER
+            l_linger: 0, // set timeout to 0
         };
 
         let result = unsafe {

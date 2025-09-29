@@ -5,7 +5,7 @@ use std::{
     fs::File,
     io::{self, BufRead, BufReader},
     path::{Path, PathBuf},
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, Once},
     time::{SystemTime, UNIX_EPOCH},
 };
 
@@ -124,7 +124,6 @@ where
     I: Input,
     F: FnMut(&I) -> R,
 {
-    // 函数体保持不变
     let mut count = 0;
 
     let end = replay_cfg.get_end();
@@ -163,4 +162,13 @@ where
     } else {
         println!("Failed to read input from file {}", filename.display());
     }
+}
+
+static INIT: Once = Once::new();
+
+/// Initialize a logger
+pub fn setup_logger() {
+    INIT.call_once(|| {
+        let _ = env_logger::try_init();
+    });
 }
