@@ -22,6 +22,7 @@ libafl = { version = "0.15.3" }
 libafl_bolts = { version = "0.15.3" }
 libc = "0.2.176"
 log = "0.4.28"
+once_cell = "1.21.3"
 openssl = { version = "0.10.73", optional = true }
 sysinfo = "0.36.1"
 
