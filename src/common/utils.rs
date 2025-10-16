@@ -9,7 +9,8 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use libafl::inputs::Input;
+use libafl::{HasNamedMetadata, inputs::Input, mutators::Tokens, state::HasRand};
+use libafl_bolts::rands::Rand;
 
 use crate::common::cli::ReplayOptions;
 
@@ -171,4 +172,36 @@ pub fn setup_logger() {
     INIT.call_once(|| {
         let _ = env_logger::try_init();
     });
+}
+
+/// Get a random token from a named metadata Tokens.
+///
+/// # Arguments
+/// * `state` - A State implements `HasRand` and `HasNamedMetadata`
+/// * `name` - Name of the metadata.
+///
+/// # Returns
+/// `Some(Vec<u8>)`, or `None` if metadata is empty.
+pub fn get_random_from_tokens<S>(state: &mut S, name: &str) -> Option<Vec<u8>>
+where
+    S: HasRand + HasNamedMetadata,
+{
+    let Some(meta) = state.named_metadata_map().get::<Tokens>(name) else {
+        return None;
+    };
+
+    if meta.tokens().len() == 0 {
+        return None;
+    }
+
+    let tokens_len = meta.tokens().len();
+    // Old meta lifetime end
+
+    let token_idx = state.rand_mut().below_or_zero(tokens_len);
+
+    // A New meta lifetime
+    let Some(meta) = state.named_metadata_map().get::<Tokens>(name) else {
+        return None;
+    };
+    Some(meta.tokens()[token_idx].clone())
 }
