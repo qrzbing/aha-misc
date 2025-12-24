@@ -35,7 +35,6 @@ pub struct BaseFuzzerOptions {
     pub token_file: String,
 }
 
-
 /// Options for replaying test cases.
 ///
 /// This struct defines the parameters for replaying previously generated
