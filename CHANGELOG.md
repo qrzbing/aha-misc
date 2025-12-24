@@ -1,5 +1,12 @@
 # Change Log
 
+## 0.0.2
+
+### Features
+
+- Add `RustlsClient` with NoVerify in Tavern. To enable it, add "rustls" feature.
+- Add `RandExt` in Common, user can generate random bytes.
+
 ## 0.0.1 - 2025-09-25
 
 ### Features
