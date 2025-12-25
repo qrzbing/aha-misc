@@ -6,6 +6,7 @@
 
 - Add `RustlsClient` with NoVerify in Tavern. To enable it, add "rustls" feature.
 - Add `RandExt` in Common, user can generate random bytes.
+- Add `PacketObserver` in observers.
 
 ## 0.0.1 - 2025-09-25
 
