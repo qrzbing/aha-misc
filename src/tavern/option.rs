@@ -55,6 +55,11 @@ impl NetworkClientOptions {
             _ => panic!("Invalid protocol specified"),
         }
     }
+
+    /// Get target address as a string.
+    pub fn address(&self) -> String {
+        format!("{}:{}", self.host, self.port)
+    }
 }
 
 /// SSL configuration options.
@@ -70,4 +75,20 @@ pub struct SSLOptions {
     /// SSL key file
     #[arg(long = "key-file")]
     pub key_file: Option<PathBuf>,
+}
+
+impl SSLOptions {
+    /// 
+    pub fn cert_file(&self) -> Option<String> {
+        self.cert_file
+            .clone()
+            .map(|p| p.to_str().unwrap().to_string())
+    }
+
+    /// 
+    pub fn key_file(&self) -> Option<String> {
+        self.key_file
+            .clone()
+            .map(|p| p.to_str().unwrap().to_string())
+    }
 }
