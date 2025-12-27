@@ -44,5 +44,6 @@ bringing you the joy of discovery.
 )]
 
 pub mod common;
+pub mod feedbacks;
 pub mod observers;
 pub mod tavern;
