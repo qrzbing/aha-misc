@@ -78,14 +78,14 @@ pub struct SSLOptions {
 }
 
 impl SSLOptions {
-    /// 
+    ///
     pub fn cert_file(&self) -> Option<String> {
         self.cert_file
             .clone()
             .map(|p| p.to_str().unwrap().to_string())
     }
 
-    /// 
+    ///
     pub fn key_file(&self) -> Option<String> {
         self.key_file
             .clone()

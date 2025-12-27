@@ -3,6 +3,14 @@
 use std::path::PathBuf;
 
 use clap::Args;
+use libafl::{
+    NopFuzzer,
+    events::NopEventManager,
+    executors::{Executor, ExitKind},
+    inputs::{HasTargetBytes, Input},
+    state::NopState,
+};
+use log::debug;
 
 /// Base options for the fuzzer configuration.
 ///
@@ -106,7 +114,7 @@ impl ReplayOptions {
             }
         }
 
-        to_replay_files
+        to_replay_files[self.start..self.get_end()].to_vec()
     }
 
     /// Get the end index for replay.
@@ -115,5 +123,38 @@ impl ReplayOptions {
     /// The end index if specified, or usize::MAX to indicate no limit.
     pub fn get_end(&self) -> usize {
         self.end.unwrap_or(usize::MAX)
+    }
+
+    /// Replay inputs from files using the provided executor.
+    pub fn with_executor<E, I>(&self, executor: &mut E)
+    where
+        E: Executor<NopEventManager, I, NopState<I>, NopFuzzer>,
+        I: HasTargetBytes + Input,
+    {
+        let mut state: NopState<I> = NopState::new();
+        let mut fuzzer = NopFuzzer::new();
+        let mut mgr = NopEventManager::new();
+        let seeds_path = self.get_replay_files();
+        for (idx, path) in seeds_path.iter().enumerate() {
+            let inp =
+                I::from_file(path).expect(&format!("Failed to load input: {}", path.display()));
+            let res = executor.run_target(&mut fuzzer, &mut state, &mut mgr, &inp);
+            match res {
+                Ok(exit_kind) => {
+                    if exit_kind == ExitKind::Ok {
+                        continue;
+                    } else {
+                        log::warn!("{} failed, reason: {:?}", path.display(), exit_kind);
+                    }
+                }
+                Err(e) => {
+                    log::error!("{} failed, reason: {}", path.display(), e);
+                }
+            }
+            if idx % 100 == 0 {
+                debug!("{} / {}", idx, seeds_path.len());
+            }
+        }
+        debug!("{} / {}", seeds_path.len(), seeds_path.len());
     }
 }
