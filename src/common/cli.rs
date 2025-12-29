@@ -165,4 +165,46 @@ impl ReplayOptions {
         }
         debug!("{} / {}", seeds_path.len(), seeds_path.len());
     }
+
+    /// Replay inputs from files using the provided harness function.
+    ///
+    /// ## Arguments
+    /// * `harness` - A mutable function that accepts a `BytesInput` reference and produces some result.
+    /// 
+    /// ## Description
+    ///
+    /// This function iterates through a list of files specified in the replay configuration,
+    /// reads each file's contents, converts them to `BytesInput` objects, and passes them
+    /// to the provided harness function. It respects the start and end indices in the configuration
+    /// and provides progress updates every 100 files processed.
+    pub fn with_harness<I, F, R>(&self, harness: &mut F)
+    where
+        I: Input,
+        F: FnMut(&I) -> R,
+    {
+        let mut count = 0;
+
+        let end = self.get_end();
+
+        for (index, file) in self.get_replay_files().iter().enumerate() {
+            if index < self.start || index >= end {
+                continue;
+            }
+
+            if self.debug {
+                debug!("Replaying file: {}", file.display());
+            }
+
+            // let data = fs::read(file)?;
+            let input = I::from_file(file).unwrap();
+            (*harness)(&input);
+
+            count += 1;
+            if count % 100 == 0 {
+                debug!("Send {} messages", count);
+            }
+        }
+
+        debug!("Send {} messages", count);
+    }
 }

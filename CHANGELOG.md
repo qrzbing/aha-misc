@@ -2,8 +2,13 @@
 
 ## 0.0.3
 
+### Breaking Changes
+
+- Move `replay` funtion to ReplayOptions, now its name is `with_harness`.
+
 ### Features
 
+- Add `execute_input` in RustlsClient.
 - Add `with_executor` in ReplayOptions.
 - Add `PacketFeedback` in feedbacks.
 

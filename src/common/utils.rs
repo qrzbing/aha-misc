@@ -12,8 +12,6 @@ use std::{
 use libafl::{HasNamedMetadata, inputs::Input, mutators::Tokens, state::HasRand};
 use libafl_bolts::rands::Rand;
 
-use crate::common::cli::ReplayOptions;
-
 /// Read a file and convert each line to a vector of bytes.
 ///
 /// # Arguments
@@ -101,56 +99,6 @@ where
     );
 
     Some(save_subdir)
-}
-
-/// Replay inputs from files using the provided harness function.
-///
-/// # Arguments
-/// * `harness` - A mutable function that accepts a `BytesInput` reference and produces some result.
-/// * `replay_cfg` - Configuration options for the replay process.
-///
-/// # Returns
-/// `Ok(())` if all files were replayed successfully, or an `Error` if any file operations fail.
-///
-/// # Description
-/// This function iterates through a list of files specified in the replay configuration,
-/// reads each file's contents, converts them to `BytesInput` objects, and passes them
-/// to the provided harness function. It respects the start and end indices in the configuration
-/// and provides progress updates every 100 files processed.
-pub fn replay<I, F, R>(
-    harness: &mut F,
-    replay_cfg: &ReplayOptions,
-) -> Result<(), Box<dyn std::error::Error>>
-where
-    I: Input,
-    F: FnMut(&I) -> R,
-{
-    let mut count = 0;
-
-    let end = replay_cfg.get_end();
-
-    for (index, file) in replay_cfg.get_replay_files().iter().enumerate() {
-        if index < replay_cfg.start || index >= end {
-            continue;
-        }
-
-        if replay_cfg.debug {
-            println!("Replaying file: {}", file.display());
-        }
-
-        // let data = fs::read(file)?;
-        let input = I::from_file(file).unwrap();
-        (*harness)(&input);
-
-        count += 1;
-        if count % 100 == 0 {
-            println!("Send {} messages", count);
-        }
-    }
-
-    println!("Send {} messages", count);
-
-    Ok(())
 }
 
 /// Display the content of a seed file.
