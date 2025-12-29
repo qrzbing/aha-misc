@@ -5,11 +5,14 @@
 
 use std::{
     fs::File,
-    io::{self, BufReader},
+    io::{self, BufReader, ErrorKind},
     net::SocketAddr,
     sync::Arc,
+    time::Duration,
 };
 
+use libafl::executors::ExitKind;
+use log::debug;
 use rustls::{
     ClientConfig, RootCertStore,
     pki_types::{CertificateDer, PrivateKeyDer},
@@ -17,6 +20,7 @@ use rustls::{
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
+    time::{sleep, timeout},
 };
 use tokio_rustls::TlsConnector;
 
@@ -54,7 +58,7 @@ impl RustlsClient {
             .dangerous() // Required to disable certificate verification
             .with_custom_certificate_verifier(Arc::new(NoVerifier))
             .with_client_auth_cert(certs, key)
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+            .map_err(|e| io::Error::new(ErrorKind::InvalidInput, e))?;
 
         Ok(Self {
             tls_config: Arc::new(config),
@@ -72,12 +76,58 @@ impl RustlsClient {
         // Wrap with TLS
         let connector = TlsConnector::from(self.tls_config.clone());
         let server_name = rustls::pki_types::ServerName::try_from(server_name)
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?
+            .map_err(|e| io::Error::new(ErrorKind::InvalidInput, e))?
             .to_owned();
 
         let tls_stream = connector.connect(server_name, tcp_stream).await?;
 
         Ok(RustlsConnection { stream: tls_stream })
+    }
+
+    /// Execute input by Rustls client
+    pub async fn execute_input(
+        &self,
+        input: &[u8],
+    ) -> Result<(ExitKind, Vec<u8>), Box<dyn std::error::Error>> {
+        let mut conn = {
+            let mut retry = 0;
+            loop {
+                match self.connect().await {
+                    Ok(c) => break c,
+                    Err(e) => {
+                        if retry >= 3 {
+                            return Err(e.into());
+                        }
+                        retry += 1;
+                        sleep(Duration::from_millis(50)).await;
+                    }
+                }
+            }
+        };
+
+        if let Err(e) = conn.send_packet(&input).await {
+            debug!("Socket error: {}", e);
+            return Ok((ExitKind::Ok, vec![]));
+        }
+
+        let resp = match timeout(Duration::from_millis(500), conn.recv(1000)).await {
+            Ok(Ok(response)) => response,
+            Ok(Err(e)) => match e.kind() {
+                ErrorKind::UnexpectedEof | ErrorKind::ConnectionReset | ErrorKind::BrokenPipe => {
+                    return Ok((ExitKind::Ok, vec![]));
+                }
+                _ => {
+                    println!("Socket error: {}", e);
+                    return Err(e.into());
+                }
+            },
+            Err(_) => {
+                return Ok((ExitKind::Timeout, vec![]));
+            }
+        };
+
+        let _ = conn.close().await;
+        Ok((ExitKind::Ok, resp))
     }
 }
 
