@@ -114,7 +114,15 @@ impl ReplayOptions {
             }
         }
 
-        to_replay_files[self.start..self.get_end()].to_vec()
+        let target_end = self.end.map(|e| e + 1).unwrap_or(to_replay_files.len());
+
+        let safe_end = std::cmp::min(target_end, to_replay_files.len());
+
+        if self.start >= safe_end {
+            return Vec::new();
+        }
+
+        to_replay_files[self.start..safe_end].to_vec()
     }
 
     /// Get the end index for replay.
